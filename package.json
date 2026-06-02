@@ -1,0 +1,9 @@
+{
+	"name": "minecraft-dl",
+	"version": "0.0.1",
+	"description": "Downloads Minecraft files from Mojang server",
+	"license": "ISC",
+	"author": "ARJ2426",
+	"type": "module",
+	"main": "src/index.js"
+}

@@ -1,0 +1,8 @@
+{
+	"files": [
+		"src/index.js"
+	],
+	"compilerOptions": {
+		"module": "nodenext"
+	}
+}
