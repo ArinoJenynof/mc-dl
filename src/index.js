@@ -10,20 +10,42 @@ import game_config from "../config/game.json" with { type: "json" };
 
 const utf8decoder = new TextDecoder();
 
-const version_manifest_v2 = await (async () => {
-	const data = await (async () => {
-		try {
-			return await readFile("minecraft/versions/version_manifest_v2.json", { encoding: "utf-8" });
-		} catch (error) {
-			const resp = await fetch("https://piston-meta.mojang.com/mc/game/version_manifest_v2.json");
-			const data = await resp.bytes();
-
-			await mkdir("minecraft/versions", { recursive: true });
-			await writeFile("minecraft/versions/version_manifest_v2.json", data);
-			return utf8decoder.decode(data);
+/**
+ * Read a file; verify it with SHA1; if mismatched, redownload from the given source
+ * @param {string} filename Name of the file to read
+ * @param {string} [sha1] SHA1 of the file
+ * @param {string} source_url Redownload from here if file is not matched with its SHA1
+ * @returns {Promise<Buffer>}
+ */
+async function verifiedRead(filename, sha1, source_url) {
+	try {
+		const data = await readFile(filename);
+		if (sha1) {
+			const hash = createHash("sha1").update(data).digest("hex");
+			if (hash !== sha1) {
+				throw new Error("hash mismatch");
+			}
 		}
-	})();
-	return JSON.parse(data);
+		return data;
+	} catch (error) {
+		const resp = await fetch(source_url);
+		const data = await resp.bytes();
+		await mkdir(dirname(filename), { recursive: true });
+		await writeFile(filename, data);
+		return data;
+	}
+}
+
+const version_manifest_v2 = await (async () => {
+	return JSON.parse(
+		utf8decoder.decode(
+			await verifiedRead(
+				"minecraft/versions/version_manifest_v2.json",
+				undefined,
+				"https://piston-meta.mojang.com/mc/game/version_manifest_v2.json"
+			)
+		)
+	);
 })();
 
 const ver2dl = await (async () => {
@@ -47,69 +69,49 @@ const ver2dl = await (async () => {
 })();
 
 const version = await (async () => {
-	const data = await (async () => {
-		try {
-			return await readFile(`minecraft/versions/${ver2dl.id}/${ver2dl.id}.json`, { encoding: "utf-8" });
-		} catch (error) {
-			const resp = await fetch(ver2dl.url);
-			const data = await resp.bytes();
-
-			await mkdir(`minecraft/versions/${ver2dl.id}`, { recursive: true });
-			await writeFile(`minecraft/versions/${ver2dl.id}/${ver2dl.id}.json`, data);
-			return utf8decoder.decode(data);
-		}
-	})();
-	return JSON.parse(data);
+	return JSON.parse(
+		utf8decoder.decode(
+			await verifiedRead(
+				`minecraft/versions/${ver2dl.id}/${ver2dl.id}.json`,
+				ver2dl.sha1,
+				ver2dl.url
+			)
+		)
+	);
 })();
 
 const assetIndex = await (async () => {
-	const data = await (async () => {
-		try {
-			return await readFile(`minecraft/assets/indexes/${version.assetIndex.id}.json`, { encoding: "utf-8" });
-		} catch (error) {
-			const resp = await fetch(version.assetIndex.url);
-			const data = await resp.bytes();
-
-			await mkdir("minecraft/assets/indexes", { recursive: true });
-			await writeFile(`minecraft/assets/indexes/${version.assetIndex.id}.json`, data);
-			return utf8decoder.decode(data);
-		}
-	})();
-	return JSON.parse(data);
+	return JSON.parse(
+		utf8decoder.decode(
+			await verifiedRead(
+				`minecraft/assets/indexes/${version.assetIndex.id}.json`,
+				version.assetIndex.sha1,
+				version.assetIndex.url
+			)
+		)
+	);
 })();
 
 await mkdir("minecraft/assets/objects", { recursive: true });
-for (const [assetName, { hash }] of Object.entries(assetIndex.objects)) {
-	try {
-		await access(`minecraft/assets/objects/${hash.substring(0, 2)}/${hash}`);
-	} catch (error) {
-		const resp = await fetch(`https://resources.download.minecraft.net/${hash.substring(0, 2)}/${hash}`);
-		const data = await resp.bytes();
-
-		await mkdir(`minecraft/assets/objects/${hash.substring(0, 2)}`, { recursive: true });
-		await writeFile(`minecraft/assets/objects/${hash.substring(0, 2)}/${hash}`, data);
-		console.log(assetName);
-	}
+for (const { hash } of Object.values(assetIndex.objects)) {
+	await verifiedRead(
+		`minecraft/assets/objects/${hash.substring(0, 2)}/${hash}`,
+		hash,
+		`https://resources.download.minecraft.net/${hash.substring(0, 2)}/${hash}`
+	);
 }
 
-try {
-	await access(`minecraft/assets/log_configs/${version.logging.client.file.id}`);
-} catch (error) {
-	const resp = await fetch(version.logging.client.file.url);
-	const data = await resp.bytes();
+await verifiedRead(
+	`minecraft/assets/log_configs/${version.logging.client.file.id}`,
+	version.logging.client.file.sha1,
+	version.logging.client.file.url
+);
 
-	await mkdir("minecraft/assets/log_configs", { recursive: true });
-	await writeFile(`minecraft/assets/log_configs/${version.logging.client.file.id}`, data);
-}
-
-try {
-	await access(`minecraft/versions/${version.id}/${version.id}.jar`);
-} catch (error) {
-	const resp = await fetch(version.downloads.client.url);
-	const data = await resp.bytes();
-
-	await writeFile(`minecraft/versions/${version.id}/${version.id}.jar`, data);
-}
+await verifiedRead(
+	`minecraft/versions/${version.id}/${version.id}.jar`,
+	version.downloads.client.sha1,
+	version.downloads.client.url
+);
 
 const plat = (() => {
 	switch (platform()) {

@@ -35,5 +35,4 @@ If you change things on `config/` re-run the app to insert the new values.
 # Random Thoughts for the Future That May Not Come
 1. Everything is hardcoded, would be nice if output folder, download folder, can be configured somehow
 2. Configuration value is currently handwritten. If only I could make sense of `arguments` object in `<version>.json` I could generate things automatically. It seems like there is no pattern there, it's much work to generate so I rather just copy and write things myself.
-3. Files are currently only tested if they are exist, should be hash-checked.
 3. Non-Windows are untested. I use Windows and I have no reason to use any other OSes.
