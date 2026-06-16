@@ -32,6 +32,7 @@ async function verifiedRead(filename, sha1, source_url) {
 		const data = await resp.bytes();
 		await mkdir(dirname(filename), { recursive: true });
 		await writeFile(filename, data);
+		console.log(filename);
 		return data;
 	}
 }
@@ -213,13 +214,13 @@ for (const args of version.arguments.game) {
 }
 
 const jvm_args = runInNewContext(`\`${jvm.join(" ")}\``, {
-	natives_directory: `"versions/${version.id}/natives"`,
+	natives_directory: `versions/${version.id}/natives`,
 	...jvm_config,
-	classpath: `"${cp.join(platform() === "win32" ? ";" : ":")}"`
+	classpath: `${cp.join(platform() === "win32" ? ";" : ":")}`
 });
 
 const logging_args = runInNewContext(`\`${version.logging.client.argument}\``, {
-	path: `"assets/log_configs/${version.logging.client.file.id}"`
+	path: `assets/log_configs/${version.logging.client.file.id}`
 });
 
 const game_args = runInNewContext(`\`${game.join(" ")}\``, {
