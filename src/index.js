@@ -219,10 +219,6 @@ const jvm_args = runInNewContext(`\`${jvm.join(" ")}\``, {
 	classpath: `${cp.join(platform() === "win32" ? ";" : ":")}`
 });
 
-const logging_args = runInNewContext(`\`${version.logging.client.argument}\``, {
-	path: `assets/log_configs/${version.logging.client.file.id}`
-});
-
 const game_args = runInNewContext(`\`${game.join(" ")}\``, {
 	...game_config,
 	version_name: version.id,
@@ -246,5 +242,5 @@ const game_args = runInNewContext(`\`${game.join(" ")}\``, {
 	version_type: version.type,
 });
 
-const args = `@javaw ${default_user_jvm.join(" ")} ${jvm_args} ${logging_args} ${version.mainClass} ${game_args}`;
+const args = `@javaw ${default_user_jvm.join(" ")} ${jvm_args} ${version.mainClass} ${game_args}`;
 await writeFile(`minecraft/${version.id}.${platform() === "win32" ? "cmd" : "sh"}`, args);
