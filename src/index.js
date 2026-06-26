@@ -242,5 +242,5 @@ const game_args = runInNewContext(`\`${game.join(" ")}\``, {
 	version_type: version.type,
 });
 
-const args = `@javaw ${default_user_jvm.join(" ")} ${jvm_args} ${version.mainClass} ${game_args}`;
+const args = `@java ${default_user_jvm.join(" ")} ${jvm_args} ${version.mainClass} ${game_args}`;
 await writeFile(`minecraft/${version.id}.${platform() === "win32" ? "cmd" : "sh"}`, args);
