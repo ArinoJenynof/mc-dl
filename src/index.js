@@ -42,7 +42,7 @@ const version_manifest_v2 = await (async () => {
 		utf8decoder.decode(
 			await verifiedRead(
 				"minecraft/versions/version_manifest_v2.json",
-				undefined,
+				"invalid SHA1 so this will always redownloaded",
 				"https://piston-meta.mojang.com/mc/game/version_manifest_v2.json"
 			)
 		)
